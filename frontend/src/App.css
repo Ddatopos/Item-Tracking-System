@@ -167,10 +167,26 @@ body {
   justify-content: center;
 }
 
+/* 可缩放时：仅内层滚动，缩放按钮固定在容器右下角 */
 .image-container-1920x1080.image-container-zoomable {
+  display: block;
+}
+
+.image-container-scroll {
+  position: absolute;
+  inset: 0;
   overflow: auto;
+  display: flex;
   align-items: flex-start;
   justify-content: flex-start;
+  border-radius: 10px;
+}
+
+.image-container-1920x1080:not(.image-container-zoomable) .image-container-scroll {
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .image-zoom-wrapper {

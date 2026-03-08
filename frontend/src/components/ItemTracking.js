@@ -79,13 +79,6 @@ function ItemTracking() {
     setImageZoom(1);
   };
 
-  const handleImageWheel = (e) => {
-    if (!imageUrl || imageLoading) return;
-    e.preventDefault();
-    if (e.deltaY < 0) zoomIn();
-    else if (e.deltaY > 0) zoomOut();
-  };
-
   return (
     <div className="app">
       <header className="app-header">
@@ -147,33 +140,33 @@ function ItemTracking() {
           <div className="result-card">
             <div
               className={`image-container image-container-1920x1080 ${imageUrl && !imageLoading ? "image-container-zoomable" : ""}`}
-              onWheel={handleImageWheel}
-              title={imageUrl && !imageLoading ? "滚轮可缩放图片" : undefined}
             >
               {imageUrl ? (
                 <>
-                  {imageLoading && (
-                    <div className="image-loading" aria-hidden>
-                      <span className="image-loading-spinner" />
-                      <span>加载图片中…</span>
+                  <div className="image-container-scroll">
+                    {imageLoading && (
+                      <div className="image-loading" aria-hidden>
+                        <span className="image-loading-spinner" />
+                        <span>加载图片中…</span>
+                      </div>
+                    )}
+                    <div
+                      className="image-zoom-wrapper"
+                      style={{
+                        width: `${100 * imageZoom}%`,
+                        height: `${100 * imageZoom}%`,
+                      }}
+                    >
+                      <img
+                        src={imageUrl}
+                        alt={`${result?.category ?? "物品"} 最后出现`}
+                        className="result-image"
+                        onLoad={() => setImageLoading(false)}
+                        onError={() => setImageLoading(false)}
+                        style={{ opacity: imageLoading ? 0 : 1 }}
+                        draggable={false}
+                      />
                     </div>
-                  )}
-                  <div
-                    className="image-zoom-wrapper"
-                    style={{
-                      width: `${100 * imageZoom}%`,
-                      height: `${100 * imageZoom}%`,
-                    }}
-                  >
-                    <img
-                      src={imageUrl}
-                      alt={`${result?.category ?? "物品"} 最后出现`}
-                      className="result-image"
-                      onLoad={() => setImageLoading(false)}
-                      onError={() => setImageLoading(false)}
-                      style={{ opacity: imageLoading ? 0 : 1 }}
-                      draggable={false}
-                    />
                   </div>
                   {!imageLoading && (
                     <div className="image-zoom-controls" aria-label="图片缩放">

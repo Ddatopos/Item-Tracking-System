@@ -39,7 +39,7 @@ class Processor:
             "timestamp":last_record[Config.COL_TIMESTAMP].strftime("%Y-%m-%d %H:%M:%S"),
             "location":last_record[Config.COL_LOCATION],
 
-            "image_url":f"/iamges/{last_record[Config.COL_IMAGE]}"
+            "image_url":f"/images/{last_record[Config.COL_IMAGE]}"
 
 
         }
