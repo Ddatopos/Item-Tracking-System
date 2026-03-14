@@ -23,6 +23,7 @@ def get_item_last(category):
     return jsonify({
         "category": result["item_name"],
         "image_path": result["image_url"],
+        "processed_image_path":result.get("processed_image_url"),
         "timestamp": result["timestamp"],
     })
 
@@ -40,6 +41,9 @@ def search():
 @app.route('/images/<path:filename>')
 def serve_image(filename):
     return send_from_directory(Config.IMAGE_FOLDER,filename)
+@app.route('/processed/<path:filename>')
+def serve_processed_image(filename):
+    return send_from_directory(Config.PROCESSED_FOLDER,filename)
 
 if __name__ == '__main__':
     print(f"Server is running on port {Config.PORT}")

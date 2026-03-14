@@ -1,4 +1,4 @@
-timestamp,item_name,location,image_filename
-2026-03-05 10:00:00,backpack,Library,capture_001.jpg
-2026-03-05 10:05:00,cup,Home,capture_002.JPG
-2025-03-05 09:00:00,backpack,Classroom,capture_003.JPG
+timestamp,class_name,location,image_id
+2026-03-05 10:00:00,backpack,"[2,0,296,243]",capture_001.jpg
+2026-03-05 10:05:00,cup,"[100,50,200,300]",capture_002.JPG
+2025-03-05 09:00:00,backpack,"[30,20,40,50]",capture_003.JPG
