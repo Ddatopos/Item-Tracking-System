@@ -50,6 +50,7 @@ function ItemTracking() {
         setResult({
           category: data.category ?? selectedCategory,
           image_path: data.image_path,
+          processed_image_path: data.processed_image_path ?? null,
           timestamp: data.timestamp ?? "",
         });
         setImageLoading(true);
@@ -62,7 +63,9 @@ function ItemTracking() {
       .finally(() => setLoading(false));
   };
 
-  const imageUrl = result?.image_path ? getImageUrl(result.image_path) : "";
+  // 只显示带框的图：有 processed 用 processed，否则用原图
+  const displayPath = result?.processed_image_path || result?.image_path;
+  const imageUrl = displayPath ? getImageUrl(displayPath) : "";
 
   const handleRetry = () => {
     setError(null);
