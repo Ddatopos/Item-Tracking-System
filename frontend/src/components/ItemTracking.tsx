@@ -1,16 +1,21 @@
-import React, { useState, useEffect } from "react";
-import { getItemCategories, getItemLastAppearance, getImageUrl } from "../api/itemApi";
+import React, { useEffect, useState } from "react";
+import {
+  getImageUrl,
+  getItemCategories,
+  getItemLastAppearance,
+  ItemLastAppearance,
+} from "../api/itemApi";
 import "../App.css";
 
 function ItemTracking() {
-  const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [categoriesLoading, setCategoriesLoading] = useState(true);
-  const [imageLoading, setImageLoading] = useState(false);
-  const [imageZoom, setImageZoom] = useState(1);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [result, setResult] = useState<ItemLastAppearance | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [categoriesLoading, setCategoriesLoading] = useState<boolean>(true);
+  const [imageLoading, setImageLoading] = useState<boolean>(false);
+  const [imageZoom, setImageZoom] = useState<number>(1);
 
   const MIN_ZOOM = 0.5;
   const MAX_ZOOM = 2;
@@ -24,9 +29,11 @@ function ItemTracking() {
     getItemCategories()
       .then((list) => {
         setCategories(Array.isArray(list) ? list : []);
-        if (!selectedCategory && list?.length) setSelectedCategory(list[0]);
+        if (list?.length) {
+          setSelectedCategory((prev) => (prev ? prev : list[0]));
+        }
       })
-      .catch((e) => {
+      .catch((e: Error) => {
         setError("加载物品列表失败：" + (e.message || "网络错误"));
       })
       .finally(() => setCategoriesLoading(false));
@@ -40,11 +47,7 @@ function ItemTracking() {
     getItemLastAppearance(selectedCategory.trim(), { cacheBust: isRetry })
       .then((data) => {
         if (!data || !data.image_path) {
-          setError(
-            isRetry
-              ? "仍无法加载，请检查网络后重试"
-              : "未返回有效结果，请重试"
-          );
+          setError(isRetry ? "仍无法加载，请检查网络后重试" : "未返回有效结果，请重试");
           return;
         }
         setResult({
@@ -55,10 +58,8 @@ function ItemTracking() {
         });
         setImageLoading(true);
       })
-      .catch((e) => {
-        setError(
-          isRetry ? "仍无法加载，请检查网络后重试" : (e.message || "查询失败")
-        );
+      .catch((e: Error) => {
+        setError(isRetry ? "仍无法加载，请检查网络后重试" : e.message || "查询失败");
       })
       .finally(() => setLoading(false));
   };
@@ -92,9 +93,7 @@ function ItemTracking() {
       <main className="app-main">
         <section className="search-panel" aria-label="物品查询">
           <h2 className="panel-title">物品查询</h2>
-          <p className="panel-desc">
-            该物品在家庭场景中最后一次出现的照片
-          </p>
+          <p className="panel-desc">该物品在家庭场景中最后一次出现的照片</p>
 
           <div className="form-group">
             <label htmlFor="item-select">物品类别</label>
@@ -119,30 +118,23 @@ function ItemTracking() {
           <button
             type="button"
             className="primary-btn"
-            onClick={handleSearch}
+            onClick={() => handleSearch()}
             disabled={!selectedCategory?.trim() || loading}
             aria-busy={loading}
             aria-label={loading ? "查询中" : "查询最后出现位置"}
           >
             {loading && <span className="btn-spinner" aria-hidden />}
-            <span className="btn-text">
-              {loading ? "查询中…" : "查询最后出现位置"}
-            </span>
+            <span className="btn-text">{loading ? "查询中…" : "查询最后出现位置"}</span>
           </button>
         </section>
 
-        <section
-          className="result-panel"
-          aria-label="查询结果"
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          <h2 className="panel-title">
-            {result ? `${result.category} · 最后出现` : "查询结果预览"}
-          </h2>
+        <section className="result-panel" aria-label="查询结果" aria-live="polite" aria-atomic="true">
+          <h2 className="panel-title">{result ? `${result.category} · 最后出现` : "查询结果预览"}</h2>
           <div className="result-card">
             <div
-              className={`image-container image-container-1920x1080 ${imageUrl && !imageLoading ? "image-container-zoomable" : ""}`}
+              className={`image-container image-container-1920x1080 ${
+                imageUrl && !imageLoading ? "image-container-zoomable" : ""
+              }`}
             >
               {imageUrl ? (
                 <>
@@ -207,27 +199,21 @@ function ItemTracking() {
                 </>
               ) : (
                 <div className="image-placeholder">
-                  <span className="placeholder-icon" aria-hidden>📷</span>
-                  <span>
-                    {loading
-                      ? "正在查询…"
-                      : "选择物品并点击「查询最后出现位置」"}
+                  <span className="placeholder-icon" aria-hidden>
+                    📷
                   </span>
+                  <span>{loading ? "正在查询…" : "选择物品并点击「查询最后出现位置」"}</span>
                 </div>
               )}
             </div>
             <div className="result-info">
               <div className="info-row">
                 <span className="info-label">物品</span>
-                <span className="info-value">
-                  {result?.category ?? "—"}
-                </span>
+                <span className="info-value">{result?.category ?? "—"}</span>
               </div>
               <div className="info-row">
                 <span className="info-label">最后出现时间</span>
-                <span className="info-value">
-                  {result?.timestamp ?? "—"}
-                </span>
+                <span className="info-value">{result?.timestamp ?? "—"}</span>
               </div>
             </div>
           </div>
