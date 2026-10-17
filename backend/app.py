@@ -16,7 +16,7 @@ def get_items():
 
 @app.route('/api/items/<path:category>',methods=['GET'])
 def get_item_last(category):
-    """查询某物品最后一次出现，返回 category / image_path / timestamp，与前端约定一致"""
+    """查询某物品最后一次出现，返回 category / image_path / timestamp,与前端约定一致"""
     result=processor.get_last_appearance(category)
     if result is None:
         return jsonify({"message":"未找到该物品记录"}),404
@@ -31,7 +31,7 @@ def get_item_last(category):
 def search():
     """兼容旧接口：?item_name=xxx"""
     item_name=request.args.get('item_name')
-    if not item_name:
+    if not item_name: 
         return jsonify({"message":"item name not exist"}),400
     result=processor.get_last_appearance(item_name)
     if result:
