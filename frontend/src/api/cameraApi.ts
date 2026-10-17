@@ -4,7 +4,7 @@ import type {
   Settings,
   DetectionEvent,
 } from "./types";
-import { mockHealth, mockEvents, MOCK_PREVIEW_URL } from "../mock/mockData";
+import { mockHealth, mockEvents, setMockPreviewStatus, MOCK_PREVIEW_URL } from "../mock/mockData";
 
 const USE_MOCK = process.env.REACT_APP_USE_MOCK === "true" || true;
 
@@ -20,12 +20,18 @@ export function getPreviewUrl(): string {
 }
 
 export async function startPreview(): Promise<void> {
-  if (USE_MOCK) return;
+  if (USE_MOCK) {
+    setMockPreviewStatus("playing");
+    return;
+  }
   await http.post("/api/stream/start");
 }
 
 export async function stopPreview(): Promise<void> {
-  if (USE_MOCK) return;
+  if (USE_MOCK) {
+    setMockPreviewStatus("stopped");
+    return;
+  }
   await http.post("/api/stream/stop");
 }
 

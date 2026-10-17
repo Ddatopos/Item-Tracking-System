@@ -13,16 +13,20 @@ function randomId(): string {
 }
 
 let healthToggles = 0;
+let previewState: PreviewStatus = "playing";
+
+export function setMockPreviewStatus(status: PreviewStatus) {
+  previewState = status;
+}
 
 export function mockHealth(): HealthResponse {
   healthToggles++;
   const statuses: SystemStatus[] = ["online", "connecting", "online", "online", "online"];
   const infStatuses: InferenceStatus[] = ["idle", "inferencing", "inferencing", "idle", "stopped"];
-  const previewStatuses: PreviewStatus[] = ["playing", "playing", "playing", "stopped", "error"];
 
   const status = statuses[healthToggles % statuses.length];
   const inferenceStatus = infStatuses[healthToggles % infStatuses.length];
-  const previewStatus = previewStatuses[healthToggles % previewStatuses.length];
+  const previewStatus = previewState;
 
   return {
     status: status,
@@ -36,7 +40,7 @@ export function mockHealth(): HealthResponse {
       },
     ],
     stream: {
-      preview_url: "/api/stream/preview",
+      preview_url: MOCK_PREVIEW_URL,
       status: previewStatus,
     },
     inference: {

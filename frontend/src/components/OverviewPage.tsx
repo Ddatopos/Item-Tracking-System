@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import MJPEGPreview from "./MJPEGPreview";
 import StatusBar from "./StatusBar";
 import RecentEvents from "./RecentEvents";
-import { getHealth, getPreviewUrl } from "../api/cameraApi";
+import { getHealth, getPreviewUrl, startPreview, stopPreview } from "../api/cameraApi";
 import type {
   HealthResponse,
   SystemStatus,
@@ -15,6 +15,7 @@ function OverviewPage() {
   const [error, setError] = useState<string | null>(null);
   const [systemStatus, setSystemStatus] = useState<SystemStatus>("connecting");
   const [previewStatus, setPreviewStatus] = useState<PreviewStatus>("loading");
+  const [previewPending, setPreviewPending] = useState(false);
 
   const fetchHealth = useCallback(() => {
     getHealth()
@@ -37,6 +38,30 @@ function OverviewPage() {
     const interval = setInterval(fetchHealth, 5000);
     return () => clearInterval(interval);
   }, [fetchHealth]);
+
+  const handleStartPreview = () => {
+    if (previewPending) return;
+    setPreviewPending(true);
+    startPreview()
+      .then(() => {
+        setPreviewStatus("playing");
+        fetchHealth();
+      })
+      .catch((e: Error) => setError("启动预览失败：" + (e.message || "网络错误")))
+      .finally(() => setPreviewPending(false));
+  };
+
+  const handleStopPreview = () => {
+    if (previewPending) return;
+    setPreviewPending(true);
+    stopPreview()
+      .then(() => {
+        setPreviewStatus("stopped");
+        fetchHealth();
+      })
+      .catch((e: Error) => setError("停止预览失败：" + (e.message || "网络错误")))
+      .finally(() => setPreviewPending(false));
+  };
 
   const displayHealth = health ?? {
     status: systemStatus,
@@ -75,6 +100,27 @@ function OverviewPage() {
             previewStatus={previewStatus}
             cameras={displayHealth.cameras}
           />
+          <div className="preview-controls">
+            {previewStatus === "playing" || previewStatus === "loading" ? (
+              <button
+                type="button"
+                className="control-btn control-btn-stop"
+                onClick={handleStopPreview}
+                disabled={previewPending}
+              >
+                {previewPending ? "处理中…" : "停止预览"}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="control-btn control-btn-start"
+                onClick={handleStartPreview}
+                disabled={previewPending}
+              >
+                {previewPending ? "处理中…" : "启动预览"}
+              </button>
+            )}
+          </div>
           <MJPEGPreview
             previewUrl={displayHealth.stream.preview_url}
             status={previewStatus}

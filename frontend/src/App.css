@@ -390,6 +390,46 @@ body {
   background: rgba(248, 113, 113, 0.1);
 }
 
+.preview-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.control-btn {
+  padding: 6px 16px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.control-btn-start {
+  background: #0f766e;
+  border-color: #0f766e;
+  color: #fff;
+}
+
+.control-btn-start:hover:not(:disabled) {
+  background: #115e59;
+}
+
+.control-btn-stop {
+  background: #f9fafb;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
+.control-btn-stop:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+.control-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .preview-loading-spinner {
   width: 28px;
   height: 28px;
