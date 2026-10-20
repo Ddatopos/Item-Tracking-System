@@ -1,0 +1,4 @@
+# 基于神经网络的物品示踪系统 V1.0
+-r requirements.txt
+pytest==8.4.2
+psutil==7.1.0

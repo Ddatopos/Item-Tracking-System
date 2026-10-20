@@ -1,8 +1,9 @@
+"""基于神经网络的物品示踪系统 V1.0：旧代码兼容配置。"""
 import os
 
 
 class Config:
-    DEBUG=True
+    DEBUG=False
     PORT=5000
     BACKEND_DIR=os.path.dirname(os.path.abspath(__file__))
     ROOT_DIR=os.path.dirname(BACKEND_DIR)

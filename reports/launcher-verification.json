@@ -1,0 +1,33 @@
+{
+  "running_status": {
+    "camera_error": null,
+    "camera_errors": 0,
+    "camera_simulated": true,
+    "camera_state": "online",
+    "capture_fps": 10.753,
+    "captured_frames": 2,
+    "detector_simulated": true,
+    "detector_version": "fake-demo-1",
+    "events_created": 1,
+    "events_merged": 0,
+    "frame_age_ms": 32.0,
+    "frame_id": "2",
+    "in_flight": false,
+    "inference_calls": 1,
+    "inference_error": null,
+    "inference_errors": 0,
+    "inference_fps": 0.0,
+    "inference_state": "running",
+    "last_inference_ms": 0.0,
+    "preview_clients": 0,
+    "preview_enabled": true,
+    "preview_parts": 0,
+    "queue_capacity": 1,
+    "queue_length": 1,
+    "skipped_frames": 0,
+    "state": "running",
+    "uptime_seconds": 0.141
+  },
+  "stop_script_returncode": 0,
+  "start_script_returncode": 0
+}

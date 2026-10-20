@@ -1,6 +1,7 @@
-Flask
-Flask-Cors
-pandas
-opencv-python
+## 基于神经网络的物品示踪系统 V1.0
+Flask==3.1.2
+opencv-python-headless==4.12.0.88
+numpy==2.2.6
+waitress==3.0.2
 
 
