@@ -1,0 +1,122 @@
+{
+  "scenario": "MockCamera + FakeDetector, real Waitress HTTP, two MJPEG clients",
+  "requested_seconds": 1800.0,
+  "elapsed_seconds": 1800.969,
+  "started_at_utc": "2026-10-18T11:48:58Z",
+  "preview_frames": [
+    23961,
+    23961
+  ],
+  "preview_fps_per_client": [
+    13.312,
+    13.312
+  ],
+  "status_latency_ms": {
+    "min": 0.0,
+    "median": 15.0,
+    "p95": 16.0,
+    "max": 32.0
+  },
+  "capture_fps": {
+    "min": 12.793,
+    "median": 13.298,
+    "p95": 13.467,
+    "max": 13.582
+  },
+  "inference_fps": {
+    "min": 0.0,
+    "median": 1.969,
+    "p95": 1.972,
+    "max": 2.0
+  },
+  "rss_mb": {
+    "min": 61.879,
+    "median": 78.037,
+    "p95": 92.734,
+    "max": 95.504
+  },
+  "rss_first_mb": 63.496,
+  "rss_last_mb": 80.391,
+  "os_threads": {
+    "min": 39,
+    "median": 39.0,
+    "p95": 42,
+    "max": 45
+  },
+  "queue_length": {
+    "min": 0,
+    "median": 1.0,
+    "p95": 1,
+    "max": 1
+  },
+  "preview_clients": {
+    "min": 0,
+    "median": 2.0,
+    "p95": 2,
+    "max": 2
+  },
+  "snapshots_checked": 360,
+  "event_count": 1,
+  "initial_status": {
+    "camera_error": null,
+    "camera_errors": 0,
+    "camera_simulated": true,
+    "camera_state": "online",
+    "capture_fps": 12.788,
+    "captured_frames": 6,
+    "detector_simulated": true,
+    "detector_version": "fake-demo-1",
+    "events_created": 1,
+    "events_merged": 0,
+    "frame_age_ms": 78.0,
+    "frame_id": "6",
+    "in_flight": false,
+    "inference_calls": 1,
+    "inference_error": null,
+    "inference_errors": 0,
+    "inference_fps": 0.0,
+    "inference_state": "running",
+    "last_inference_ms": 16.0,
+    "preview_clients": 0,
+    "preview_enabled": true,
+    "preview_parts": 0,
+    "queue_capacity": 1,
+    "queue_length": 1,
+    "skipped_frames": 0,
+    "state": "running",
+    "uptime_seconds": 0.484
+  },
+  "final_status": {
+    "camera_error": null,
+    "camera_errors": 0,
+    "camera_simulated": true,
+    "camera_state": "online",
+    "capture_fps": 13.41,
+    "captured_frames": 23966,
+    "detector_simulated": true,
+    "detector_version": "fake-demo-1",
+    "events_created": 1,
+    "events_merged": 3544,
+    "frame_age_ms": 31.0,
+    "frame_id": "23966",
+    "in_flight": false,
+    "inference_calls": 3545,
+    "inference_error": null,
+    "inference_errors": 0,
+    "inference_fps": 1.969,
+    "inference_state": "running",
+    "last_inference_ms": 16.0,
+    "preview_clients": 2,
+    "preview_enabled": true,
+    "preview_parts": 47920,
+    "queue_capacity": 1,
+    "queue_length": 1,
+    "skipped_frames": 20420,
+    "state": "running",
+    "uptime_seconds": 1800.812
+  },
+  "errors": [],
+  "server_exit_code": 0,
+  "passed": true,
+  "limitations": "Simulated images and detector only. No hardware, YOLO accuracy, packaging or full React integration validation."
+}

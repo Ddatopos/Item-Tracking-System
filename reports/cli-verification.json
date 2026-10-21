@@ -1,0 +1,80 @@
+[
+  {
+    "args": [
+      "--data-dir",
+      "D:\\学习资料\\大创\\.delivery-tools\\cli-evidence\\data",
+      "migrate-legacy"
+    ],
+    "returncode": 0,
+    "stdout": "{\"inserted\": 3, \"skipped\": 0, \"rows\": 3}\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "--data-dir",
+      "D:\\学习资料\\大创\\.delivery-tools\\cli-evidence\\data",
+      "migrate-legacy"
+    ],
+    "returncode": 0,
+    "stdout": "{\"inserted\": 0, \"skipped\": 3, \"rows\": 3}\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "--data-dir",
+      "D:\\学习资料\\大创\\.delivery-tools\\cli-evidence\\data",
+      "export-csv",
+      "--output",
+      "D:\\学习资料\\大创\\.delivery-tools\\cli-evidence\\events.csv"
+    ],
+    "returncode": 0,
+    "stdout": "{\"csv\": \"D:\\\\学习资料\\\\大创\\\\.delivery-tools\\\\cli-evidence\\\\events.csv\"}\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "--data-dir",
+      "D:\\学习资料\\大创\\.delivery-tools\\cli-evidence\\data",
+      "backup",
+      "--output",
+      "D:\\学习资料\\大创\\.delivery-tools\\cli-evidence\\full-backup.zip"
+    ],
+    "returncode": 0,
+    "stdout": "{\"backup\": \"D:\\\\学习资料\\\\大创\\\\.delivery-tools\\\\cli-evidence\\\\full-backup.zip\", \"files\": 7}\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "restore",
+      "--archive",
+      "D:\\学习资料\\大创\\.delivery-tools\\cli-evidence\\full-backup.zip",
+      "--destination",
+      "D:\\学习资料\\大创\\.delivery-tools\\cli-evidence\\recovered"
+    ],
+    "returncode": 0,
+    "stdout": "{\"restored\": \"D:\\\\学习资料\\\\大创\\\\.delivery-tools\\\\cli-evidence\\\\recovered\", \"files\": 7}\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "--data-dir",
+      "D:\\学习资料\\大创\\.delivery-tools\\cli-evidence\\data",
+      "export-logs",
+      "--output",
+      "D:\\学习资料\\大创\\.delivery-tools\\cli-evidence\\logs.zip"
+    ],
+    "returncode": 0,
+    "stdout": "{\"logs\": \"D:\\\\学习资料\\\\大创\\\\.delivery-tools\\\\cli-evidence\\\\logs.zip\"}\n",
+    "stderr": ""
+  },
+  {
+    "restored_items": [
+      "backpack",
+      "cup"
+    ],
+    "image_status_codes": [
+      200,
+      200
+    ]
+  }
+]

@@ -1,85 +1,35 @@
-# 家庭寻物系统 — 前后端联调说明（V1.0 第二版）
+# 基于神经网络的物品示踪系统 V1.0
 
-## 一、前后端如何跑通
+本地后端第二版交付。以现有 Flask 查询代码为基础，完成单一视频源、共享最新帧、MJPEG 预览、后台 DetectorService 调度、SQLite 事件、类别会话去重、CSV 兼容、备份恢复与接口测试。**本次没有向 GitHub 上传或创建提交。**
 
-### 1. 启动后端（Flask）
+先读 [Word 操作手册](docs/物品示踪系统第二版操作手册.docx) 或 [同内容 Markdown 操作手册](docs/OPERATIONS.md)。本机快速验证：
 
-```bash
-cd backend
-# 建议使用虚拟环境
-python -m venv venv
-# Windows:
-venv\Scripts\activate
-# macOS/Linux:
-# source venv/bin/activate
-
-pip install -r requirements.txt
-python app.py
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r backend/requirements-lock.txt
+.\.venv\Scripts\python.exe backend/run.py --camera mock --demo --start --infer
 ```
 
-> 若看到 `WARNING: This is a development server. Do not use it in a production deployment.` 属正常提示，本地开发可忽略；**正式部署**请使用 Gunicorn、uWSGI 等 WSGI 服务器。
+浏览器打开 `http://127.0.0.1:5000/api/preview` 查看模拟预览；访问 `/api/status`、`/api/events?envelope=1` 和 `/api/items/cup` 查询。模拟画面和假检测明确标记为模拟，不代表真实 YOLO 或硬件已联调。正式入口使用 Waitress，只监听 127.0.0.1，关闭 debug。停止可按 Ctrl+C 或 POST `/api/shutdown`。
 
-后端默认运行在 **http://localhost:5000**，当前已实现接口：
+| 文档 | 内容 |
+| --- | --- |
+| [API](docs/API.md) | 完整路由 字段 错误和旧版兼容 |
+| [架构](docs/ARCHITECTURE.md) | 共享合同 线程 数据库 去重和关闭顺序 |
+| [交付报告](docs/DELIVERY.md) | C1 至 C5 状态 文件清单 实测结果和剩余工作 |
+| [依赖说明](docs/DEPENDENCIES.md) | 固定版本 第三方许可和原创边界 |
+| [测试摘要](reports/test-summary.md) | 自动测试 持续运行和复现命令 |
 
-- `GET /api/items` → 物品类别列表（数组）
-- `GET /api/items/<类别名>` → 该物品最后一次出现：`{ category, image_path, processed_image_path, timestamp }`（带框图为 `processed_image_path`）
-- `GET /api/search?item_name=xxx` → 旧版兼容查询接口
-- `GET /images/<文件名>` → 原图静态文件
-- `GET /processed/<文件名>` → 带检测框的图片（后端根据 CSV 的 `location` 画框生成）
+旧数据需要显式迁移到运行数据目录，先停机，再运行 `python backend/manage.py migrate-legacy`。原 CSV、原图和原前端保留；旧 `backend/data/processor.py` 是历史参考，不再被主流程调用。
 
-> 任务书第二版新增的运行接口（`/api/health`、`/api/stream/preview`、`/api/inference/start|stop`、`/api/settings`、`/api/events`）尚未实现，前端目前通过 mock 数据演示。
+**前端接入注意**：现有 `frontend/src/api/cameraApi.ts` 的 `USE_MOCK` 包含 `|| true`，总览页始终使用模拟。此交付未修改 React；需邓单关闭强制模拟并继续完成设置和识别控制交互。开发代理联调时后端加 `--dev-proxy`，正式同源部署不加该参数。真实模型工厂与摄像头验收由相应成员接入。
 
-### 2. 启动前端（React）
-
-**新开一个终端**：
-
-```bash
-cd frontend
-npm install
-npm start
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r backend/requirements-dev.txt
+.\.venv\Scripts\python.exe -m pytest -q --junitxml=reports/pytest.xml
+.\.venv\Scripts\python.exe backend/scripts/soak_test.py --seconds 1800 --output reports/soak-recheck.json
 ```
 
-前端会跑在 **http://localhost:3000**。
-`package.json` 里已配置 `"proxy": "http://localhost:5000"`，所以：
+运行数据位于默认 `runtime` 或指定的 `--data-dir`，不上传。上传仓库、正式部署、备份与回退步骤见操作手册；上传命令必须由本人审阅后自行执行。未完成的硬件比较、真实模型性能、桌面安装包和完整前端联调在交付报告中单独列出。
 
-- 请求 `/api/items`、`/api/items/xxx` 会转发到后端 5000 端口
-- 请求 `/images/xxx`、`/processed/xxx` 会转发到后端，用于显示原图与带框图
-
-**Mock 模式**：总览页的摄像头预览、系统状态、检测事件来自 `frontend/src/mock/`（`cameraApi.ts` 中 `USE_MOCK` 当前强制为 `true`），无需真实摄像头即可演示完整交互；后端运行接口就绪后将该开关置为 `false` 即可切换真实数据。
-
-**其他常用命令**：
-
-```bash
-npm run build        # 生产构建（输出 frontend/build/）
-npm test             # 运行测试
-npx tsc --noEmit     # TypeScript 类型检查
-```
-
-### 3. 页面使用方式
-
-前端分为三个 Tab：
-
-1. **总览**：系统状态条（后端/摄像头/推理/预览）、实时预览画面（支持加载/停止/错误/重试）、最近检测事件列表
-2. **历史**：下拉选择物品 → 点击「查询最后出现位置」→ 显示该物品最后一次出现的**带检测框的图片**与时间（有框图则显示框图，否则显示原图），支持图片缩放查看
-3. **设置**：预览/识别启停、类别、置信度、模型、推理频率等（开发中，暂为占位）
-
-
----
-
-## 二、数据约定
-
-- **CSV**（`backend/data/recognition.csv`）：列名与 `backend/config.py` 一致，即 `timestamp`、`class_name`、`location`、`image_id`；图片放在 `backend/images/`，文件名与 CSV 中 `image_id` 一致；`location` 为检测框坐标，格式如 `"[xmin, ymin, xmax, ymax]"`，后端据此生成带框图到 `backend/processed_images/`。  
-- **接口**：  
-  - 列表：`GET /api/items` 返回 `["backpack","cup",...]`  
-  - 详情：`GET /api/items/<类别>` 返回 `{ "category", "image_path", "processed_image_path", "timestamp" }`，前端优先用 `processed_image_path` 显示带框图。  
-- 前端经 proxy 请求 `/images/`、`/processed/` 显示图片。
-
----
-
-## 三、已做的对接修改
-
-- 后端 `/api/items` 直接返回**数组**，前端可直接当列表用。
-- `GET /api/items/<path:category>` 返回 `category` / `image_path` / `processed_image_path` / `timestamp`；前端优先显示 `processed_image_path`（带框图）。
-- 后端根据 CSV 的 `location` 在原图上画检测框，生成图存于 `processed_images/`，通过 `GET /processed/<文件名>` 提供。
-- 前端第二版新增总览页（状态条 + MJPEG 预览容器 + 最近事件）与统一 TS 类型/API 层，运行接口暂以 mock 演示，详见 `项目架构_第二版.md`。
-
+第一版说明已保留于 [历史 README](docs/README-v1-reference.md)，仅供基线参考，当前启动与接口约定以本页及 docs 中的第二版文档为准。
