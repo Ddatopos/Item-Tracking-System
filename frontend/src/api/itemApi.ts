@@ -3,8 +3,10 @@
  * 后端约定：category / image_path / timestamp
  */
 
-import { AxiosError } from "axios";
-import http, { API_BASE } from "./http";
+import http, { API_BASE, getApiErrorMessage } from "./http";
+
+const USE_MOCK = process.env.REACT_APP_USE_MOCK === "true";
+const MOCK_CATEGORIES = ["backpack", "phone", "keyboard", "cup", "chair", "laptop", "book", "bottle"];
 
 export interface ItemLastAppearance {
   category: string;
@@ -22,14 +24,12 @@ interface SearchOptions {
  * @returns {Promise<string[]>}
  */
 export async function getItemCategories(): Promise<string[]> {
+  if (USE_MOCK) return [...MOCK_CATEGORIES];
   try {
     const { data } = await http.get<string[]>("/api/items");
     return Array.isArray(data) ? data : [];
   } catch (error: unknown) {
-    if (error instanceof Error) {
-      throw new Error(error.message || "获取物品列表失败");
-    }
-    throw new Error("获取物品列表失败");
+    throw new Error(getApiErrorMessage(error));
   }
 }
 
@@ -42,6 +42,17 @@ export async function getItemLastAppearance(
   category: string,
   options: SearchOptions = {}
 ): Promise<ItemLastAppearance> {
+  if (USE_MOCK) {
+    if (!MOCK_CATEGORIES.includes(category)) throw new Error("未找到该物品记录");
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540"><rect width="100%" height="100%" fill="#e2e8f0"/><rect x="280" y="110" width="360" height="300" fill="#14b8a6" fill-opacity=".18" stroke="#0f766e" stroke-width="8"/><text x="36" y="64" font-size="32" fill="#334155">${category} · mock</text></svg>`;
+    const image = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+    return {
+      category,
+      image_path: image,
+      processed_image_path: image,
+      timestamp: new Date().toISOString(),
+    };
+  }
   const params = options.cacheBust ? { _t: Date.now() } : undefined;
 
   try {
@@ -51,14 +62,7 @@ export async function getItemLastAppearance(
     });
     return data;
   } catch (error: unknown) {
-    const axiosError = error as AxiosError;
-    if (axiosError.response?.status === 404) {
-      throw new Error("未找到该物品记录");
-    }
-    if (error instanceof Error && error.message) {
-      throw new Error(error.message);
-    }
-    throw new Error("查询失败");
+    throw new Error(getApiErrorMessage(error));
   }
 }
 
@@ -68,7 +72,11 @@ export async function getItemLastAppearance(
  */
 export function getImageUrl(imagePath: string): string {
   if (!imagePath) return "";
-  if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
+  if (
+    imagePath.startsWith("http://")
+    || imagePath.startsWith("https://")
+    || imagePath.startsWith("data:")
+  ) {
     return imagePath;
   }
   const base = API_BASE.replace(/\/$/, "");

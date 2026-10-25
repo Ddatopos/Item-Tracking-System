@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import OverviewPage from "./components/OverviewPage";
 import ItemTracking from "./components/ItemTracking";
+import EventHistory from "./components/EventHistory";
+import SettingsPage from "./components/SettingsPage";
 import type { AppTab } from "./api/types";
 
 const TABS: { key: AppTab; label: string }[] = [
@@ -36,12 +38,13 @@ function App() {
 
       <main className="app-main">
         {activeTab === "overview" && <OverviewPage />}
-        {activeTab === "history" && <ItemTracking />}
-        {activeTab === "settings" && (
-          <div className="placeholder-page">
-            <p className="placeholder-text">设置页面将在第2周实现</p>
+        {activeTab === "history" && (
+          <div className="history-page">
+            <EventHistory />
+            <ItemTracking />
           </div>
         )}
+        {activeTab === "settings" && <SettingsPage />}
       </main>
     </div>
   );

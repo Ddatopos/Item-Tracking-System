@@ -21,6 +21,12 @@ export interface DetectionEvent {
   model_version: string;
   raw_image_path: string;
   annotated_image_path: string;
+  first_seen?: string;
+  last_seen?: string;
+  observations?: number;
+  inference_params?: Record<string, unknown>;
+  image_url?: string | null;
+  annotated_image_url?: string | null;
 }
 
 export type SystemStatus = "online" | "connecting" | "offline" | "error";
@@ -47,6 +53,10 @@ export interface InferenceInfo {
 }
 
 export interface HealthResponse {
+  name?: string;
+  version?: string;
+  service_status?: string;
+  state?: string;
   status: SystemStatus;
   cameras: CameraInfo[];
   stream: StreamInfo;
@@ -54,11 +64,47 @@ export interface HealthResponse {
 }
 
 export interface Settings {
-  category: string;
-  confidence: number;
-  model: string;
-  inference_frequency: number;
+  inference_fps: number;
+  confidence_threshold: number;
+  selected_classes: string[];
+  dedup_seconds: number;
+  input_size: number;
+  category?: string;
+  confidence?: number;
+  inference_frequency?: number;
+  model?: string;
+  camera_id?: string;
+}
+
+export interface EventPage {
+  events: DetectionEvent[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface EventQuery {
+  limit?: number;
+  offset?: number;
+  class_name?: string;
+  category?: string;
+  camera_id?: string;
+  since?: string;
+  until?: string;
+}
+
+export interface CameraListResponse {
+  cameras: CameraOption[];
+  active_camera_id: string;
+  state: string;
+}
+
+export interface CameraOption {
   camera_id: string;
+  room: string;
+  source_type?: string;
+  status?: SystemStatus;
+  resolution?: string;
 }
 
 export interface ApiError {

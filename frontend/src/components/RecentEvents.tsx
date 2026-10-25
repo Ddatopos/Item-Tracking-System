@@ -1,28 +1,54 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { DetectionEvent } from "../api/types";
 import { getEvents } from "../api/cameraApi";
+import { getImageUrl } from "../api/itemApi";
+
+function EventThumbnail({ event }: { event: DetectionEvent }) {
+  const [failed, setFailed] = useState(false);
+  const imageUrl = event.annotated_image_url || event.image_url;
+
+  if (!imageUrl || failed) {
+    return <div className="event-thumbnail event-thumbnail-fallback">暂无图片</div>;
+  }
+
+  return (
+    <img
+      className="event-thumbnail"
+      src={getImageUrl(imageUrl)}
+      alt={`${event.class_name} 检测标注图`}
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 function RecentEvents() {
   const [events, setEvents] = useState<DetectionEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const requestPending = useRef(false);
 
-  const loadEvents = () => {
-    setLoading(true);
+  const loadEvents = useCallback(async (showLoading = true) => {
+    if (requestPending.current) return;
+    requestPending.current = true;
+    if (showLoading) setLoading(true);
     setError(null);
-    getEvents({ limit: 5 })
-      .then((list) => {
-        setEvents(Array.isArray(list) ? list : []);
-      })
-      .catch((e: Error) => {
-        setError("加载检测事件失败：" + (e.message || "网络错误"));
-      })
-      .finally(() => setLoading(false));
-  };
+    try {
+      const page = await getEvents({ limit: 5 });
+      setEvents(page.events);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "网络错误";
+      setError("加载检测事件失败：" + message);
+    } finally {
+      requestPending.current = false;
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    loadEvents();
-  }, []);
+    void loadEvents();
+    const interval = window.setInterval(() => void loadEvents(false), 10000);
+    return () => window.clearInterval(interval);
+  }, [loadEvents]);
 
   const confidenceColor = (v: number) => {
     if (v >= 0.8) return "#0f766e";
@@ -37,7 +63,7 @@ function RecentEvents() {
         <button
           type="button"
           className="events-refresh-btn"
-          onClick={loadEvents}
+          onClick={() => void loadEvents()}
           disabled={loading}
           aria-label="刷新事件列表"
         >
@@ -60,6 +86,7 @@ function RecentEvents() {
         <div className="events-list">
           {events.map((evt) => (
             <div key={evt.event_id} className="event-card">
+              <EventThumbnail event={evt} />
               <div className="event-card-main">
                 <div className="event-card-header">
                   <span className="event-class">{evt.class_name}</span>

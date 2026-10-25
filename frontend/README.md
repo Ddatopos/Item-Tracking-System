@@ -1,70 +1,41 @@
-# Getting Started with Create React App
+# 家庭寻物系统前端
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+React + TypeScript 前端。接口合同以仓库根目录的 [`docs/API.md`](../docs/API.md) 为准，前端接口说明见 [`docs/HTTP接口协议草案.md`](docs/HTTP接口协议草案.md)。
 
-## Available Scripts
+## 本机启动
 
-In the project directory, you can run:
+先在另一个终端从仓库根目录启动后端。CRA 开发代理需要后端信任 localhost:3000 来源：
 
-### `npm start`
+```powershell
+.\.venv\Scripts\python.exe backend/run.py --camera mock --demo --start --infer --dev-proxy
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+在 `frontend` 目录安装依赖并启动：
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```powershell
+npm install
+npm start
+```
 
-### `npm test`
+默认连接真实后端。仅做界面演示时，可显式开启本地 Mock：
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```powershell
+$env:REACT_APP_USE_MOCK = "true"
+npm start
+```
 
-### `npm run build`
+环境变量修改后需重启开发服务器。Mock 模式不验证真实后端、摄像头或模型。
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 常用脚本
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```powershell
+npx tsc --noEmit
+npm test -- --watchAll=false
+npm run build
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 功能入口
 
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- **总览**：实时预览、系统/设备状态和最近检测事件。
+- **历史**：检测事件筛选、分页、原图/标注图查看和 CSV 导出；可按类别查询最后出现记录。
+- **设置**：检测类别、置信度、推理频率、事件合并间隔、模型输入尺寸及推理启停。
