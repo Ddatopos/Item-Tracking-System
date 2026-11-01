@@ -39,7 +39,7 @@ function StatusBadge({ label, status }: { label: string; status: string }) {
 }
 
 function StatusBar({ systemStatus, inference, previewStatus, cameras }: StatusBarProps) {
-  const activeCamera = cameras.find((c) => c.status !== "offline");
+  const activeCamera = cameras.find((c) => c.status !== "offline") ?? cameras[0];
 
   return (
     <div className="status-bar" aria-label="系统状态" aria-live="polite">
@@ -50,7 +50,11 @@ function StatusBar({ systemStatus, inference, previewStatus, cameras }: StatusBa
       <div className="status-item">
         <span className="status-item-label">摄像头</span>
         <StatusBadge
-          label={activeCamera ? `${activeCamera.room} ${activeCamera.resolution}` : "无"}
+          label={activeCamera
+            ? activeCamera.status === "offline"
+              ? `${activeCamera.room} 离线`
+              : `${activeCamera.room} ${activeCamera.resolution}`
+            : "无"}
           status={activeCamera ? activeCamera.status : "offline"}
         />
       </div>

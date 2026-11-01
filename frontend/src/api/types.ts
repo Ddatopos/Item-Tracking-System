@@ -113,3 +113,20 @@ export interface ApiError {
 }
 
 export type AppTab = "overview" | "history" | "settings";
+
+export interface DesktopOperationResult {
+  ok: boolean;
+  message: string;
+  data?: Record<string, unknown> | null;
+}
+
+export interface DesktopApi {
+  start(): Promise<DesktopOperationResult>;
+  stop(): Promise<DesktopOperationResult>;
+  open_data_dir(): Promise<DesktopOperationResult>;
+  export_logs(destination: string): Promise<DesktopOperationResult>;
+  set_data_dir(path: string): Promise<DesktopOperationResult>;
+  shutdown(): Promise<DesktopOperationResult>;
+  select_data_dir(): Promise<DesktopOperationResult>;
+  select_export_destination(): Promise<DesktopOperationResult>;
+}

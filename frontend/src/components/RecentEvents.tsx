@@ -6,6 +6,11 @@ import { getImageUrl } from "../api/itemApi";
 function EventThumbnail({ event }: { event: DetectionEvent }) {
   const [failed, setFailed] = useState(false);
   const imageUrl = event.annotated_image_url || event.image_url;
+  const version = event.frame_id || event.captured_at;
+  const resolvedImageUrl = imageUrl ? getImageUrl(imageUrl) : "";
+  const imageSrc = resolvedImageUrl.startsWith("data:")
+    ? resolvedImageUrl
+    : `${resolvedImageUrl}${resolvedImageUrl.includes("?") ? "&" : "?"}_frame=${encodeURIComponent(version)}`;
 
   if (!imageUrl || failed) {
     return <div className="event-thumbnail event-thumbnail-fallback">暂无图片</div>;
@@ -13,8 +18,9 @@ function EventThumbnail({ event }: { event: DetectionEvent }) {
 
   return (
     <img
+      key={version}
       className="event-thumbnail"
-      src={getImageUrl(imageUrl)}
+      src={imageSrc}
       alt={`${event.class_name} 检测标注图`}
       onError={() => setFailed(true)}
     />

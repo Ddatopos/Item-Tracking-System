@@ -8,6 +8,7 @@ import {
   updateSettings,
 } from "../api/cameraApi";
 import { getItemCategories } from "../api/itemApi";
+import DesktopOperations from "./DesktopOperations";
 import type { InferenceStatus, Settings } from "../api/types";
 
 const INITIAL_SETTINGS: Settings = {
@@ -296,6 +297,7 @@ function SettingsPage() {
           </div>
         </form>
       </section>
+      <DesktopOperations />
     </div>
   );
 }

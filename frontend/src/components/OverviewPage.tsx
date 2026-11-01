@@ -17,20 +17,27 @@ function OverviewPage() {
   const [previewStatus, setPreviewStatus] = useState<PreviewStatus>("loading");
   const [previewPending, setPreviewPending] = useState(false);
 
-  const fetchHealth = useCallback(() => {
-    getHealth()
-      .then((data) => {
-        setHealth(data);
-        setSystemStatus(data.status);
-        setPreviewStatus(data.stream.status);
-        setError(null);
-      })
-      .catch((e: Error) => {
-        setError("无法连接后端：" + (e.message || "网络错误"));
-        setSystemStatus("offline");
-        setPreviewStatus("error");
-      })
-      .finally(() => setLoading(false));
+  const fetchHealth = useCallback(async () => {
+    try {
+      const data = await getHealth();
+      setHealth(data);
+      setSystemStatus(
+        data.service_status === "ok"
+          ? "online"
+          : data.service_status === "shutdown"
+            ? "offline"
+            : "error"
+      );
+      setPreviewStatus(data.stream.status);
+      setError(null);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "网络错误";
+      setError("无法连接后端：" + message);
+      setSystemStatus("offline");
+      setPreviewStatus("error");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -42,12 +49,15 @@ function OverviewPage() {
   const handleStartPreview = () => {
     if (previewPending) return;
     setPreviewPending(true);
+    setPreviewStatus("loading");
     startPreview()
       .then(() => {
-        setPreviewStatus("playing");
-        fetchHealth();
+        return fetchHealth();
       })
-      .catch((e: Error) => setError("启动预览失败：" + (e.message || "网络错误")))
+      .catch((e: unknown) => {
+        const message = e instanceof Error ? e.message : "网络错误";
+        setError("启动预览失败：" + message);
+      })
       .finally(() => setPreviewPending(false));
   };
 
@@ -56,10 +66,12 @@ function OverviewPage() {
     setPreviewPending(true);
     stopPreview()
       .then(() => {
-        setPreviewStatus("stopped");
-        fetchHealth();
+        return fetchHealth();
       })
-      .catch((e: Error) => setError("停止预览失败：" + (e.message || "网络错误")))
+      .catch((e: unknown) => {
+        const message = e instanceof Error ? e.message : "网络错误";
+        setError("停止预览失败：" + message);
+      })
       .finally(() => setPreviewPending(false));
   };
 
@@ -95,7 +107,7 @@ function OverviewPage() {
       {!loading && (
         <>
           <StatusBar
-            systemStatus={displayHealth.status}
+            systemStatus={systemStatus}
             inference={displayHealth.inference}
             previewStatus={previewStatus}
             cameras={displayHealth.cameras}
@@ -122,8 +134,9 @@ function OverviewPage() {
             )}
           </div>
           <MJPEGPreview
-            previewUrl={displayHealth.stream.preview_url}
+            previewUrl={displayHealth.stream.preview_url || getPreviewUrl()}
             status={previewStatus}
+            onRetry={handleStartPreview}
           />
           <RecentEvents />
         </>

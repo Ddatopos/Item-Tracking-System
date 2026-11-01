@@ -5,13 +5,15 @@ import type { PreviewStatus } from "../api/types";
 interface MJPEGPreviewProps {
   previewUrl: string;
   status: PreviewStatus;
+  onRetry?: () => void;
 }
 
-function MJPEGPreview({ previewUrl, status: externalStatus }: MJPEGPreviewProps) {
+function MJPEGPreview({ previewUrl = "", status: externalStatus, onRetry }: MJPEGPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mockRef = useRef<MockCameraRef | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const [imgError, setImgError] = useState(false);
+  const [retryToken, setRetryToken] = useState(0);
   const isMock = previewUrl.startsWith("mock://");
 
   const cleanup = useCallback(() => {
@@ -31,6 +33,11 @@ function MJPEGPreview({ previewUrl, status: externalStatus }: MJPEGPreviewProps)
   }, [cleanup]);
 
   useEffect(() => {
+    setImgError(false);
+    setRetryToken((token) => token + 1);
+  }, [previewUrl, externalStatus]);
+
+  useEffect(() => {
     if (isMock && externalStatus === "playing") {
       initMock();
     }
@@ -42,10 +49,12 @@ function MJPEGPreview({ previewUrl, status: externalStatus }: MJPEGPreviewProps)
   };
 
   const handleRetry = () => {
-    setImgError(false);
-    if (imgRef.current && !isMock) {
-      imgRef.current.src = previewUrl + "?_t=" + Date.now();
+    if (onRetry) {
+      onRetry();
+      return;
     }
+    setImgError(false);
+    setRetryToken((token) => token + 1);
   };
 
   const renderContent = () => {
@@ -93,8 +102,9 @@ function MJPEGPreview({ previewUrl, status: externalStatus }: MJPEGPreviewProps)
 
     return (
       <img
+        key={retryToken}
         ref={imgRef}
-        src={previewUrl}
+        src={`${previewUrl}${previewUrl.includes("?") ? "&" : "?"}_retry=${retryToken}`}
         alt="摄像头实时预览"
         className="preview-img"
         onError={handleImgError}

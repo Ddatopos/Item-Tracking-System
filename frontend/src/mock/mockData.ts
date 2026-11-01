@@ -32,6 +32,7 @@ export function mockHealth(): HealthResponse {
   const previewStatus = previewState;
 
   return {
+    service_status: "ok",
     status: status,
     cameras: [
       {

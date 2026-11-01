@@ -296,6 +296,7 @@ body {
 }
 
 .settings-page {
+  flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
   max-width: 900px;
@@ -304,6 +305,12 @@ body {
 
 .settings-page > .settings-card {
   width: 100%;
+}
+
+.desktop-operations-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .settings-header {

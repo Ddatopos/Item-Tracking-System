@@ -51,6 +51,17 @@ npm test -- --watchAll=false
 npm run build
 ```
 
+### Windows 桌面演示
+
+Windows 免安装桌面包构建脚本会生成包含 React 生产资源、pywebview 桌面主程序、受控后台进程和维护工具的目录包：
+
+```powershell
+.\scripts\Build-Desktop.ps1
+```
+
+构建完成后双击 `desktop\dist\ItemTrackingSystem\ItemTrackingSystem.exe` 即可启动，不需要额外打开后端终端。目标电脑需安装 Microsoft Edge WebView2 Runtime。构建环境、输出目录、桌面控制器、安全关闭及当前演示能力说明见[桌面应用说明](desktop/README.md)。
+
+
 ## 前端功能
 
 - **总览**：后端、摄像头、预览和推理状态；MJPEG 预览启停、错误反馈和重试；最近事件自动刷新。
