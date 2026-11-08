@@ -14,7 +14,7 @@
 | A2 | 网络接入 | 完成（待确认） | 电脑后端用现有 `OpenCVCamera` 直连实际视频地址，持续取得有效帧；待王琪臻确认接入结论 |
 | A3 | 参数配置 | 完成 | 地址、端口、分辨率、帧率、JPEG 质量和自动对焦均在配置文件中，改参数不改源码；浏览器人工确认待做 |
 | A4 | 可靠性 | 完成 | 设备端单实例占用摄像头，提供状态、日志、停止与资源释放；systemd 托管，服务重启 3.6 秒恢复 |
-| A5 | 实机验收 | 完成（有方法偏差） | 30 分钟连续运行、服务重启、断网恢复、换地址重配均已实测；断网用电脑侧 TCP 中断模拟，未物理拔线 |
+| A5 | 实机验收 | 完成 | 30 分钟连续运行、服务重启、断网恢复（TCP 模拟 + 物理拔线各一次）、换地址重配均已实测；物理拔线暴露的槽位泄漏已修复（`392c685`）并复测通过 |
 | A6 | 交接材料 | 部分完成 | 部署与排障说明、示例配置、宿舍样例图已提交；短视频未提供；MockCamera 复用后端已有实现 |
 
 ## 二 文件与接口
@@ -97,10 +97,13 @@ py -3 backend/run.py --camera opencv --source http://192.168.137.40:8080/video -
 | --- | --- |
 | 30 分钟连续运行 | 36 分 14 秒，`frames=32248`，`errors=0`，15.1 fps，CPU 42.8%，RSS 181 MB，温度 34.5℃，`throttled=0x0` |
 | 服务重启 | `systemctl restart` 后 3.6 秒恢复 online，帧号继续增长 |
-| 短时断网 | 中断 1.0 秒后后端 offline，恢复后 1.6 秒自动 online，恢复后 12.9 fps（中断前 13.6 fps） |
+| 短时断网（TCP 模拟） | 中断 1.0 秒后后端 offline，恢复后 1.6 秒自动 online，恢复后 12.9 fps（中断前 13.6 fps） |
+| 短时断网（物理拔网线 30 秒） | 8 秒内 offline；插回后 14:52:41 自动 online，无人工重启，稳态 14.07 fps；设备端 `uptime_seconds` 连续、帧号继续增长 |
 | 更换地址 | 新增 `192.168.137.77/24` 后用新地址取流，13.8 fps、88 帧，设备端配置未修改 |
 
-过程问题：首次接入时画面红蓝通道对调。原因是本机 `capture_array` 返回顺序为 BGR，代码多做了一次 `RGB2BGR`；已在 `source.py` 修正并实机复验。
+过程问题：
+1. 首次接入时画面红蓝通道对调。原因是本机 `capture_array` 返回顺序为 BGR，代码多做了一次 `RGB2BGR`；已在 `source.py` 修正并实机复验。
+2. 物理拔线测试暴露设备端缺陷：半开连接使 `wfile.write` 长期阻塞，客户端槽位泄漏到 4/4，后端重连全部被拒（`clients: 4/4`）。已为连接增加 `socket_timeout_seconds`（默认 10 秒），写超时后由 `finally` 回收槽位；修复提交 `392c685`，修复后物理复测通过。
 
 完整记录见 `docs/device/acceptance.md`，样例见 `docs/device/samples/`。
 
@@ -164,20 +167,16 @@ py -3 backend/run.py --camera opencv --source http://<树莓派IP>:8080/video --
 
 | 类别 | 事项 | 责任 |
 | --- | --- | --- |
-| 本岗位未完成 | 合并申请：分支已推送（`55ea76b`），PR 待发起并交孙正群审查 | 王韵哲 / 孙正群 |
 | 本岗位未完成 | 另一位成员按 README 独立复现并重启设备服务取流 | 王韵哲 / 指定成员 |
 | 待确认 | 与王琪臻确认 `OpenCVCamera` 接入结论（技术验证已完成） | 王琪臻 |
 | 待确认 | 浏览器人工确认 `/video` 画面 | 王韵哲 |
-| 可选 | 物理拔网线 30 秒复测（当前用 TCP 中断模拟） | 王韵哲 |
 | 待确认 | `docs/device/samples/` 两张宿舍实拍是否可公开进仓库 | 王韵哲 |
 | 后续整体验收 | 真实 YOLO 适配、统一启动器、安装包与整体回归 | 孙正群 |
 
 ## 六 交付位置
 
-- 本地分支：`feature/wang-camera`，提交 `ed79391`、`c9f9066`、`cff68f1`、`55ea76b`
-- 远端状态：已推送到 `Ddatopos/Item-Tracking-System` 的 `feature/wang-camera`，与本地 `55ea76b` 一致；PR 待发起
+- 本地与远端分支：`feature/wang-camera`，提交 `ed79391`、`c9f9066`、`cff68f1`、`55ea76b`、`392c685`
+- 合并申请：PR #2 `https://github.com/Ddatopos/Item-Tracking-System/pull/2`，待孙正群审查
 - 仓库：`https://github.com/Ddatopos/Item-Tracking-System`
-- 发起 PR：`https://github.com/Ddatopos/Item-Tracking-System/compare/main...feature/wang-camera?expand=1`
-- 建议 PR 标题：`feat: 树莓派视频源交付与可靠性（A1-A6）`
 - 需要配合：孙正群审查合并申请；王琪臻确认后端接入；另一位成员执行复现
 - 提交内容不含密码、密钥、虚拟环境、模型权重和实例配置 `configs/camera.json`
