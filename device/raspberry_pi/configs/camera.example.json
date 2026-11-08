@@ -1,6 +1,6 @@
 {
   "camera_id": "pi-cam-1",
-  "room": "未设置房间",
+  "room": "宿舍",
   "host": "0.0.0.0",
   "port": 8080,
   "width": 1280,
