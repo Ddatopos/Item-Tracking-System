@@ -1,0 +1,20 @@
+{
+  "camera_id": "pi-cam-1",
+  "room": "宿舍",
+  "host": "0.0.0.0",
+  "port": 8080,
+  "width": 1280,
+  "height": 720,
+  "fps": 15,
+  "jpeg_quality": 80,
+  "autofocus": "continuous",
+  "lens_position": 1.0,
+  "max_clients": 4,
+  "socket_timeout_seconds": 10,
+  "open_attempts": 5,
+  "retry_backoff_seconds": 1.0,
+  "max_backoff_seconds": 30.0,
+  "frame_stale_seconds": 3.0,
+  "log_level": "INFO",
+  "log_file": ""
+}
