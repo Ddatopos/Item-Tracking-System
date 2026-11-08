@@ -304,6 +304,13 @@ class CameraRequestHandler(BaseHTTPRequestHandler):
 
     protocol_version = "HTTP/1.0"
 
+    def setup(self):
+        super().setup()
+        # 半开连接会让 wfile.write 长时间阻塞，线程不退出则客户端槽位无法释放；
+        # 设置写超时，让异常按时抛出让 finally 回收槽位。
+        timeout = float(self.server.config.get("socket_timeout_seconds", 10))
+        self.connection.settimeout(timeout)
+
     def do_GET(self):
         path = urlsplit(self.path).path.rstrip("/") or "/"
         try:
