@@ -1,0 +1,16 @@
+[Unit]
+Description=Item Tracking Camera MJPEG Source
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# 默认使用 pi 账号；部署账号不是 pi 时请改为实际用户，例如 nick
+User=pi
+WorkingDirectory=/home/pi/Item-Tracking-System/device/raspberry_pi
+ExecStart=/usr/bin/python3 camera_server.py --config /etc/item-tracking/camera.json
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
