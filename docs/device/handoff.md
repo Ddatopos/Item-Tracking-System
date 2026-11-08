@@ -10,7 +10,7 @@
 
 | 编号 | 任务 | 状态 | 说明 |
 | --- | --- | --- | --- |
-| A1 | 代码交付 | 部分完成 | 代码、依赖说明、配置示例、启停脚本、README 已提交；另一位成员按 README 复现尚未执行；分支尚未推送到远端 |
+| A1 | 代码交付 | 部分完成 | 代码、依赖说明、配置示例、启停脚本、README 已提交并推送到远端 `55ea76b`；另一位成员按 README 复现尚未执行；PR 待发起 |
 | A2 | 网络接入 | 完成（待确认） | 电脑后端用现有 `OpenCVCamera` 直连实际视频地址，持续取得有效帧；待王琪臻确认接入结论 |
 | A3 | 参数配置 | 完成 | 地址、端口、分辨率、帧率、JPEG 质量和自动对焦均在配置文件中，改参数不改源码；浏览器人工确认待做 |
 | A4 | 可靠性 | 完成 | 设备端单实例占用摄像头，提供状态、日志、停止与资源释放；systemd 托管，服务重启 3.6 秒恢复 |
@@ -164,7 +164,7 @@ py -3 backend/run.py --camera opencv --source http://<树莓派IP>:8080/video --
 
 | 类别 | 事项 | 责任 |
 | --- | --- | --- |
-| 本岗位未完成 | 分支推送与 PR：token 所属账号 `Nick666-666` 对 `Ddatopos/Item-Tracking-System` 无写权限（403），需仓库负责人授权或改用有权限账号 | 王韵哲 / 孙正群 |
+| 本岗位未完成 | 合并申请：分支已推送（`55ea76b`），PR 待发起并交孙正群审查 | 王韵哲 / 孙正群 |
 | 本岗位未完成 | 另一位成员按 README 独立复现并重启设备服务取流 | 王韵哲 / 指定成员 |
 | 待确认 | 与王琪臻确认 `OpenCVCamera` 接入结论（技术验证已完成） | 王琪臻 |
 | 待确认 | 浏览器人工确认 `/video` 画面 | 王韵哲 |
@@ -174,9 +174,10 @@ py -3 backend/run.py --camera opencv --source http://<树莓派IP>:8080/video --
 
 ## 六 交付位置
 
-- 本地分支：`feature/wang-camera`，提交 `ed79391`、`c9f9066`、`cff68f1`
-- 远端状态：尚未推送。当前 remote `ghproxy` 为只读镜像；`github` remote 已配置，推送返回 `403 Permission to Ddatopos/Item-Tracking-System.git denied to Nick666-666`
+- 本地分支：`feature/wang-camera`，提交 `ed79391`、`c9f9066`、`cff68f1`、`55ea76b`
+- 远端状态：已推送到 `Ddatopos/Item-Tracking-System` 的 `feature/wang-camera`，与本地 `55ea76b` 一致；PR 待发起
 - 仓库：`https://github.com/Ddatopos/Item-Tracking-System`
+- 发起 PR：`https://github.com/Ddatopos/Item-Tracking-System/compare/main...feature/wang-camera?expand=1`
 - 建议 PR 标题：`feat: 树莓派视频源交付与可靠性（A1-A6）`
-- 需要配合：孙正群处理仓库写权限并审查合并申请；王琪臻确认后端接入；另一位成员执行复现
+- 需要配合：孙正群审查合并申请；王琪臻确认后端接入；另一位成员执行复现
 - 提交内容不含密码、密钥、虚拟环境、模型权重和实例配置 `configs/camera.json`
