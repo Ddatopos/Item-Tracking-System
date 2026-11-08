@@ -4,7 +4,7 @@
 - 项目：基于神经网络的物品示踪系统 V1.0
 - 日期：2026-11-08
 - 分支：`feature/wang-camera`（基于 main `25cad5d`）
-- 提交：`ed79391`（设备模块、文档与样例）、`c9f9066`（回填验收记录）
+- 提交：`ed79391`（设备模块、文档与样例）、`c9f9066`（回填验收记录）、`cff68f1`（交接报告与本文件）
 
 ## 一 任务结果
 
@@ -174,7 +174,7 @@ py -3 backend/run.py --camera opencv --source http://<树莓派IP>:8080/video --
 
 ## 六 交付位置
 
-- 本地分支：`feature/wang-camera`，提交 `ed79391`、`c9f9066`
+- 本地分支：`feature/wang-camera`，提交 `ed79391`、`c9f9066`、`cff68f1`
 - 远端状态：尚未推送。当前 remote `ghproxy` 为只读镜像；`github` remote 已配置，推送返回 `403 Permission to Ddatopos/Item-Tracking-System.git denied to Nick666-666`
 - 仓库：`https://github.com/Ddatopos/Item-Tracking-System`
 - 建议 PR 标题：`feat: 树莓派视频源交付与可靠性（A1-A6）`
