@@ -65,7 +65,7 @@ def test_live_dedup_keeps_two_images_only(runtime):
 
 def test_legacy_csv_idempotent_and_timezone(runtime):
     repo = runtime.repository
-    assert repo.import_csv(LEGACY) == {"rows": 1, "inserted": 1, "skipped": 0}
+    assert repo.import_csv(LEGACY) == {"rows": 1, "inserted": 1, "skipped": 0, "errors": []}
     assert repo.import_csv(LEGACY)["skipped"] == 1
     row = repo.events()[0][0]
     assert row["captured_at"] == "2026-03-05T02:00:00.000+00:00"
