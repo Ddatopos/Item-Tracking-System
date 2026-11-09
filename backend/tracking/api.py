@@ -1,9 +1,9 @@
 """基于神经网络的物品示踪系统 V1.0：兼容旧查询的运行 API。"""
 from pathlib import Path
 from urllib.parse import quote
-from flask import Blueprint, Response, abort, current_app, jsonify, request, send_file
+from flask import Blueprint, Response, abort, current_app, g, jsonify, request, send_file
 from .contracts import timestamp
-from .repository import safe_path
+from .repository import CSVRowError, safe_path
 from .runtime import RuntimeConflict
 from . import APP_NAME, VERSION
 
@@ -57,6 +57,18 @@ def health():
 @api.get("/api/status")
 def status():
     return jsonify(current_app.extensions["runtime"].status())
+
+
+@api.get("/api/model/classes")
+def model_classes():
+    runtime, _ = services()
+    detector = runtime.detector
+    available = bool(getattr(detector, "available", True))
+    names = getattr(detector, "class_names", ()) if available else ()
+    if not isinstance(names, (list, tuple)) or any(not isinstance(name, str) or not name.strip() for name in names):
+        raise RuntimeError("invalid DetectorService class_names metadata")
+    return jsonify(model_version=detector.model_version, available=available,
+                   simulated=bool(getattr(detector, "simulated", False)), classes=list(names))
 
 
 @api.get("/api/cameras")
@@ -234,7 +246,12 @@ def import_csv():
         text = request.get_data().decode("utf-8-sig")
     except UnicodeDecodeError as exc:
         raise ValueError("CSV must be UTF-8") from exc
-    return jsonify(repo.import_csv(text))
+    try:
+        return jsonify(repo.import_csv(text, mode=request.args.get("mode", "strict")))
+    except CSVRowError as exc:
+        message = str(exc)
+        return jsonify(error={"code": "invalid_request", "message": message, "request_id": g.request_id},
+                       message=message, inserted=0, skipped=0, rows=exc.rows, errors=exc.errors), 400
 
 
 @api.get("/api/items")

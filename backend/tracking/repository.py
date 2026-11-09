@@ -32,6 +32,16 @@ CREATE INDEX IF NOT EXISTS events_time ON detection_events(last_seen DESC);
 PRAGMA user_version=1;
 """
 
+CSV_REQUIRED_FIELDS = {"timestamp", "class_name", "location", "image_id"}
+CSV_MODES = ("strict", "skip_invalid")
+
+
+class CSVRowError(ValueError):
+    def __init__(self, rows, errors):
+        self.rows, self.errors = rows, errors
+        first = errors[0]
+        super().__init__(f"CSV row {first['line']}: {first['reason']}")
+
 
 def safe_path(root, name):
     root = Path(root).resolve()
@@ -169,45 +179,77 @@ class Repository:
                 writer.writerow(values)
         return output.getvalue()
 
-    def import_csv(self, text):
-        """先验证全部行再提交；第一版四列与第二版完整列均可重复导入。"""
-        reader = csv.DictReader(io.StringIO(text.lstrip("\ufeff")))
-        if not reader.fieldnames or not {"timestamp", "class_name", "location", "image_id"} <= set(reader.fieldnames):
-            raise ValueError("CSV needs timestamp,class_name,location,image_id")
-        rows = []
-        for number, row in enumerate(reader, start=2):
-            if number > 10002:
-                raise ValueError("CSV exceeds 10000 rows")
-            try:
-                when = timestamp(row.get("captured_at") or row["timestamp"])
-                raw = row.get("raw_image_path") or ("images/" + row["image_id"] if row["image_id"] else "")
-                ann = row.get("annotated_image_path") or ""
-                for name in [raw, ann]:
-                    if name:
-                        safe_path(self.root, name)
-                # 严格 JSON 数组；第一版的 [1,2,3,4] 也是合法 JSON。
-                identity = json.dumps([row["timestamp"], row["class_name"], row["location"], row["image_id"]], ensure_ascii=False)
-                event_id = row.get("event_id") or str(uuid.uuid5(uuid.NAMESPACE_URL, identity))
-                event = DetectionEvent(event_id, str(row.get("frame_id") or "0"), row.get("camera_id") or "legacy-camera",
-                                       row.get("room") or "历史导入", row["class_name"], float(row.get("confidence") or 1),
-                                       json.loads(row["location"]), when, row.get("model_version") or "legacy-csv", raw, ann)
-                event.validate()
-                data = asdict(event)
-                data.update(bbox=json.dumps(list(event.bbox)), first_seen=timestamp(row.get("first_seen") or when),
-                            last_seen=timestamp(row.get("last_seen") or row["timestamp"]),
-                            observations=int(row.get("observations") or 1),
-                            inference_params=json.dumps(validate_settings(json.loads(row.get("inference_params") or "{}"))))
-                if data["observations"] < 1 or data["first_seen"] > data["last_seen"]:
-                    raise ValueError("invalid event interval or observations")
-                rows.append(data)
-            except (ValueError, TypeError, KeyError, OverflowError) as exc:
-                raise ValueError(f"CSV row {number}: {exc}") from exc
+    def _csv_event(self, row):
+        when = timestamp(row.get("captured_at") or row["timestamp"])
+        raw = row.get("raw_image_path") or ("images/" + row["image_id"] if row["image_id"] else "")
+        ann = row.get("annotated_image_path") or ""
+        for name in (raw, ann):
+            if name:
+                safe_path(self.root, name)
+        identity = json.dumps([row["timestamp"], row["class_name"], row["location"], row["image_id"]], ensure_ascii=False)
+        event_id = row.get("event_id") or str(uuid.uuid5(uuid.NAMESPACE_URL, identity))
+        event = DetectionEvent(event_id, str(row.get("frame_id") or "0"), row.get("camera_id") or "legacy-camera",
+                               row.get("room") or "历史导入", row["class_name"], float(row.get("confidence") or 1),
+                               json.loads(row["location"]), when, row.get("model_version") or "legacy-csv", raw, ann)
+        event.validate()
+        data = asdict(event)
+        data.update(bbox=json.dumps(list(event.bbox)), first_seen=timestamp(row.get("first_seen") or when),
+                    last_seen=timestamp(row.get("last_seen") or row["timestamp"]),
+                    observations=int(row.get("observations") or 1),
+                    inference_params=json.dumps(validate_settings(json.loads(row.get("inference_params") or "{}"))))
+        if not 1 <= data["observations"] <= 2**63 - 1 or data["first_seen"] > data["last_seen"]:
+            raise ValueError("invalid event interval or observations")
+        return data
+
+    def prepare_csv(self, text, mode="strict", *, legacy_prepare=None):
+        """仅准备记录，不写数据库；离线旧图片可由调用方在临时目录准备。"""
+        if mode not in CSV_MODES:
+            raise ValueError("CSV mode must be strict or skip_invalid")
+        reader = csv.reader(io.StringIO(text.lstrip("\ufeff"), newline=""), strict=True)
+        rows, errors = [], []
+        try:
+            header = next(reader, [])
+            if not CSV_REQUIRED_FIELDS <= set(header) or len(header) != len(set(header)):
+                raise ValueError("CSV needs unique columns timestamp,class_name,location,image_id")
+            while True:
+                line = reader.line_num + 1
+                fields = next(reader, None)
+                if fields is None:
+                    break
+                if not fields:  # 空白行不计作记录，物理行号仍继续累加
+                    continue
+                if len(rows) + len(errors) >= 10000:
+                    raise ValueError("CSV exceeds 10000 rows")
+                try:
+                    row = dict(zip(header, fields))
+                    if len(fields) > len(header) or not CSV_REQUIRED_FIELDS <= row.keys():
+                        raise ValueError("wrong number of CSV columns")
+                    if legacy_prepare is not None:
+                        row = {key: row[key] for key in CSV_REQUIRED_FIELDS}
+                    data = self._csv_event(row)
+                    if legacy_prepare is not None:
+                        legacy_prepare(row, data)
+                    rows.append(data)
+                except (ValueError, TypeError, KeyError, OverflowError) as exc:
+                    errors.append({"line": line, "reason": str(exc)})
+        except csv.Error as exc:
+            # 引号损坏可能吞掉后续物理行，不能可靠重新识别记录边界。
+            raise ValueError(f"invalid CSV structure near line {reader.line_num}: {exc}") from exc
+        if errors and mode == "strict":
+            raise CSVRowError(len(rows) + len(errors), errors)
+        return rows, errors
+
+    def commit_csv(self, rows, errors):
         inserted = 0
         with self.lock, self.db:
             for data in rows:
                 self.db.execute("INSERT OR IGNORE INTO cameras VALUES (?,?,?)", (data["camera_id"], data["room"], "imported"))
                 inserted += self._insert(data)
-        return {"inserted": inserted, "skipped": len(rows) - inserted, "rows": len(rows)}
+        return {"inserted": inserted, "skipped": len(rows) - inserted,
+                "rows": len(rows) + len(errors), "errors": errors}
+
+    def import_csv(self, text, mode="strict"):
+        return self.commit_csv(*self.prepare_csv(text, mode))
 
     def backup_database(self, destination):
         with self.lock:

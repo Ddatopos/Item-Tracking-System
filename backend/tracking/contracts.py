@@ -74,7 +74,11 @@ class CameraSource(Protocol):
 
 
 class DetectorService(Protocol):
-    """只在一个推理线程调用；必须在关闭超时内返回，不在这里实现 YOLO。"""
+    """detect 由单个推理线程调用，必须有界返回；不在此实现 YOLO。
+
+    适配器可在加载时提供只读的 class_names（字符串列表或元组），供 HTTP
+    查询；available=False 表示未配置。缺少 class_names 不影响既有适配器。
+    """
     model_version: str
     simulated: bool
     def detect(self, frame: CameraFrame, settings: dict) -> Sequence[DetectionEvent]: ...

@@ -10,44 +10,61 @@ import cv2
 import numpy as np
 from tracking.config import load_config
 from tracking.process_lock import DataDirectoryLock
-from tracking.repository import Repository, safe_path
+from tracking.repository import CSV_MODES, CSVRowError, Repository, safe_path
 
 
-def migrate(repo, source):
+def migrate(repo, source, mode="strict"):
     source = Path(source).resolve()
-    data = (source / "data" / "recognition.csv").read_text(encoding="utf-8-sig")
-    # 只导入 CSV 引用的安全图片；不信任 CSV 里的相对路径。
-    import csv
-    import io
-    import json as json_module
-    pending = []
-    for row in csv.DictReader(io.StringIO(data)):
-        name = row["image_id"]
-        if not name or Path(name).name != name or "\\" in name or ":" in name:
-            raise ValueError("legacy image_id must be a filename")
-        original = safe_path(source / "images", name)
-        target = safe_path(repo.root, "images/" + name)
-        if original.is_file() and original.suffix.lower() in {".jpg", ".jpeg", ".png"}:
-            target.parent.mkdir(parents=True, exist_ok=True)
-            if target.exists() and target.read_bytes() != original.read_bytes():
-                raise ValueError("legacy image filename conflicts with existing data")
-            shutil.copy2(original, target)
-            image = cv2.imdecode(np.frombuffer(original.read_bytes(), dtype=np.uint8), cv2.IMREAD_COLOR)
-            if image is not None:
-                x1, y1, x2, y2 = map(int, json_module.loads(row["location"]))
-                cv2.rectangle(image, (x1, y1), (x2, y2), (0, 0, 255), 3)
-                boxed = safe_path(repo.root, "processed_images/boxed_" + name)
-                boxed.parent.mkdir(parents=True, exist_ok=True)
-                ok, encoded = cv2.imencode(boxed.suffix, image)
-                if ok:
-                    boxed.write_bytes(encoded.tobytes())
-                    row["annotated_image_path"] = "processed_images/boxed_" + name
-        pending.append(row)
-    out = io.StringIO(newline="")
-    writer = csv.DictWriter(out, fieldnames=["timestamp", "class_name", "location", "image_id", "annotated_image_path"])
-    writer.writeheader()
-    writer.writerows(pending)
-    return repo.import_csv(out.getvalue())
+    text = (source / "data" / "recognition.csv").read_text(encoding="utf-8-sig")
+    with tempfile.TemporaryDirectory(dir=repo.root) as temporary:
+        staging = Path(temporary)
+        pending = {}
+
+        def prepare(row, data):
+            name = row["image_id"]
+            if not name or Path(name).name != name or "\\" in name or ":" in name:
+                raise ValueError("legacy image_id must be a filename")
+            original = safe_path(source / "images", name)
+            suffix = original.suffix.lower()
+            if not original.is_file() or suffix not in {".jpg", ".jpeg", ".png"}:
+                return  # 旧记录可没有可用图片
+            raw = original.read_bytes()
+            images = {safe_path(repo.root, data["raw_image_path"]): raw}
+            if repo.event(data["event_id"]) is None:
+                image = cv2.imdecode(np.frombuffer(raw, dtype=np.uint8), cv2.IMREAD_COLOR) if raw else None
+                if image is not None:
+                    h, w = image.shape[:2]
+                    x1, y1, x2, y2 = (int(min(v, bound - 1)) for v, bound in zip(json.loads(data["bbox"]), (w, h, w, h)))
+                    cv2.rectangle(image, (x1, y1), (x2, y2), (0, 0, 255), 3)
+                    ok, encoded = cv2.imencode(suffix, image)
+                    if ok:
+                        key = hashlib.sha256(data["event_id"].encode()).hexdigest()
+                        data["annotated_image_path"] = f"processed_images/legacy-{key}{suffix}"
+                        images[safe_path(repo.root, data["annotated_image_path"])] = encoded.tobytes()
+            for target, content in images.items():
+                existing = pending.get(target, target)
+                if existing.exists() and (not existing.is_file() or existing.read_bytes() != content):
+                    raise ValueError("legacy image filename conflicts with existing data")
+            for target, content in images.items():
+                if target not in pending and not target.exists():
+                    staged = staging / str(len(pending))
+                    staged.write_bytes(content)
+                    pending[target] = staged
+
+        rows, errors = repo.prepare_csv(text, mode, legacy_prepare=prepare)
+        created = []
+        try:
+            for target, staged in pending.items():
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with target.open("xb") as file:
+                    created.append(target)
+                    with staged.open("rb") as source_file:
+                        shutil.copyfileobj(source_file, file)
+            return repo.commit_csv(rows, errors)
+        except Exception:
+            for target in created:
+                target.unlink(missing_ok=True)
+            raise
 
 
 def backup(repo, destination):
@@ -118,6 +135,7 @@ def main():
     sub = parser.add_subparsers(dest="command", required=True)
     migration = sub.add_parser("migrate-legacy")
     migration.add_argument("--source-backend", default=str(Path(__file__).parent))
+    migration.add_argument("--mode", choices=CSV_MODES, default="strict")
     save = sub.add_parser("backup")
     save.add_argument("--output", required=True)
     recover = sub.add_parser("restore")
@@ -138,15 +156,21 @@ def main():
                 if output.exists() or output.is_relative_to(root):
                     raise ValueError("choose a new log archive outside data directory")
                 output.parent.mkdir(parents=True, exist_ok=True)
-                with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as archive:
-                    for path in (root / "logs").glob("*.log*"):
+                paths = [safe_path(root, "logs/" + path.name) for path in (root / "logs").glob("*.log*") if path.is_file()]
+                with zipfile.ZipFile(output, "x", zipfile.ZIP_DEFLATED) as archive:
+                    for path in paths:
                         archive.write(path, path.name)
                 result = {"logs": str(output)}
             else:
                 repo = Repository(root)
                 try:
                     if args.command == "migrate-legacy":
-                        result = migrate(repo, args.source_backend)
+                        try:
+                            result = migrate(repo, args.source_backend, args.mode)
+                        except CSVRowError as exc:
+                            print(json.dumps({"inserted": 0, "skipped": 0, "rows": exc.rows,
+                                              "errors": exc.errors}, ensure_ascii=False))
+                            return 2
                     elif args.command == "backup":
                         result = backup(repo, args.output)
                     else:
@@ -160,4 +184,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

@@ -74,6 +74,7 @@ class UnavailableDetector:
     model_version = "not-configured"
     simulated = False
     available = False
+    class_names = ()
 
     def detect(self, frame, settings):
         raise RuntimeError("DetectorService is not configured")
@@ -87,6 +88,7 @@ class FakeDetector:
     model_version = "fake-demo-1"
     simulated = True
     available = True
+    class_names = ("cup",)
 
     def __init__(self, delay=0):
         self.delay = delay
@@ -95,8 +97,10 @@ class FakeDetector:
     def detect(self, frame, settings):
         time.sleep(self.delay)
         self.calls += 1
+        bbox = [100 * frame.width / 640, 90 * frame.height / 360,
+                220 * frame.width / 640, 240 * frame.height / 360]
         return [DetectionEvent(str(uuid.uuid4()), frame.frame_id, frame.camera_id, frame.room,
-                               "cup", .9, [100, 90, 220, 240], frame.captured_at, self.model_version)]
+                               "cup", .9, bbox, frame.captured_at, self.model_version)]
 
     def close(self):
         pass
