@@ -51,15 +51,9 @@ npm test -- --watchAll=false
 npm run build
 ```
 
-### Windows 桌面演示
+### Windows 桌面接入
 
-Windows 免安装桌面包构建脚本会生成包含 React 生产资源、pywebview 桌面主程序、受控后台进程和维护工具的目录包：
-
-```powershell
-.\scripts\Build-Desktop.ps1
-```
-
-构建完成后双击 `desktop\dist\ItemTrackingSystem\ItemTrackingSystem.exe` 即可启动，不需要额外打开后端终端。目标电脑需安装 Microsoft Edge WebView2 Runtime。构建环境、输出目录、桌面控制器、安全关闭及当前演示能力说明见[桌面应用说明](desktop/README.md)。
+当前分支已有桌面界面和预留的构建脚本，统一启动器及 `desktop/` 构建输入仍待团队交付。现阶段可手动启动后端，加载同源 React 页面，按[第三版接入说明](docs/V3_INTEGRATION.md)验证启停、设置、历史和维护接口。
 
 
 ## 前端功能
@@ -69,7 +63,7 @@ Windows 免安装桌面包构建脚本会生成包含 React 生产资源、pyweb
 - **历史**：类别、摄像头和时间筛选；分页浏览检测事件；查看原图/标注图；导出 CSV。
 - **寻物查询**：按类别查询最后一次出现记录和图片。
 
-详细接口以[后端 API 文档](docs/API.md)为准；前端接口说明见[前端 HTTP 接口说明](frontend/docs/HTTP接口协议草案.md)。
+详细接口以[后端 API 文档](docs/API.md)为准；前端启动和使用见[前端说明](frontend/README.md)。第三版新增模型类别查询 `/api/model/classes`，历史类别仍使用 `/api/items`。
 
 ## 其他文档
 
@@ -78,7 +72,9 @@ Windows 免安装桌面包构建脚本会生成包含 React 生产资源、pyweb
 | [操作手册](docs/OPERATIONS.md) | 安装、启动、数据管理、备份和故障排查 |
 | [API](docs/API.md) | 路由、字段、错误格式和兼容说明 |
 | [架构](docs/ARCHITECTURE.md) | 视频链路、线程、数据库和关闭流程 |
-| [交付报告](docs/DELIVERY.md) | 交付状态、测试结果和未完成事项 |
+| [第三版交付报告](docs/DELIVERY_V3.md) | 本轮状态、实际测试和交接事项 |
+| [第三版接入说明](docs/V3_INTEGRATION.md) | 可运行工厂示例、视频和桌面合同、复现命令 |
+| [第二版历史报告](docs/DELIVERY.md) | 旧版本的交付和验收记录 |
 | [依赖说明](docs/DEPENDENCIES.md) | 固定版本、第三方许可和原创边界 |
 | [历史 README](docs/README-v1-reference.md) | 第一版基线参考 |
 

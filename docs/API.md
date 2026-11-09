@@ -12,6 +12,13 @@
 
 `health.service_status=ok` 表示进程和接口存活；`status=online/connecting/offline` 表示摄像头状态，兼容当前前端。`health.stream={preview_url,status}`，`health.inference={status,model_version,fps}`。停止取帧时进程仍可健康，不把没有设备等同于进程崩溃。
 
+| 页面要显示的状态 | 读取字段 | 判读 |
+| --- | --- | --- |
+| 后端服务 | `/api/health` 的 `service_status` | `ok` 表示可响应，`shutdown` 表示已关闭运行资源；请求失败单独显示为后端不可达 |
+| 摄像头 | `/api/status` 的 `camera_state` 或 `health.status` | `camera_state` 区分 `stopped`、`connecting`、`online`、`offline`；兼容字段 `health.status` 将 `stopped` 显示为 `offline` |
+| 预览 | `health.stream.status` | 有在线帧且开启预览才是 `playing`，否则 `stopped`；浏览器加载错误另行显示 |
+| 推理 | `health.inference.status` 或 `status.inference_state` | 健康接口将运行中映射为 `inferencing`，等待帧或启动中映射为 `idle`；完整内部状态看 `inference_state` |
+
 `/api/status` 的主要字段为 state、camera_state、inference_state、camera_error、inference_error、frame_id、frame_age_ms、capture_fps、inference_fps、queue_length、queue_capacity、in_flight、preview_clients、preview_enabled、last_inference_ms、detector_version、detector_simulated、camera_simulated、uptime_seconds；另有 captured_frames、inference_calls、inference_errors、camera_errors、skipped_frames、events_created、events_merged、preview_parts。
 
 capture_fps/inference_fps 是最近至多三百次样本的窗口频率，不是承诺值；停止或超过三秒没有样本后显示零。status_latency 由持续测试外部测量。queue_length 只能是 0 或 1，正在执行的推理另外统计为 in_flight。
@@ -53,6 +60,20 @@ GET `/api/settings` 返回以下五个规范字段，并附带旧单类别前端
 
 旧字段映射：confidence → confidence_threshold，inference_frequency → inference_fps，category=all → 空类别数组，单个 category → 单元素类别数组。model 和 camera_id 是当前工厂和配置的只读值；可以原值回传，不能在线更换。多类别应只更新 selected_classes，不同时回传含糊的 category=all。
 
+### 模型类别目录
+
+`GET /api/model/classes` 返回当前检测器发布的支持类别，不执行推理，也不查询历史事件。以下两种情况均为 HTTP 200：
+
+```json
+{"model_version":"fake-demo-1","available":true,"simulated":true,"classes":["cup"]}
+```
+
+```json
+{"model_version":"not-configured","available":false,"simulated":false,"classes":[]}
+```
+
+真实适配器可在加载时提供 `class_names` 字符串列表或元组。未提供清单的既有适配器仍可运行，目录为空。`available` 表示检测器可用；空目录不代表可以用历史类别补作模型支持类别。`GET /api/items` 始终表示历史中已出现的类别。设置页可以保留已保存但当前目录没有的值供用户调整，不能把它们标为模型支持项。
+
 ## 事件和最后出现查询
 
 | 方法 | 路径 | 返回 |
@@ -80,7 +101,20 @@ GET `/images/{filename}` 与 `/processed/{filename}` 保留第一版路径，但
 
 前端优先使用稳定事件图片 URL。磁盘文件名会随代表图更新而替换，旧的 `/media` 版本路径可能返回 404；该行为避免无限保留每次检测的图片。
 
-GET `/api/events/export` 导出 UTF-8 BOM CSV，前四列为第一版 timestamp、class_name、location、image_id，后续包含完整事件元数据。POST `/api/events/import` 接收原始 UTF-8 CSV body，Content-Type 必须是 text/csv，最大四 MiB、一万行。整批验证成功才写入，返回 `{inserted,skipped,rows}`。相同 event_id 或相同第一版记录重复导入会跳过。
+GET `/api/events/export` 导出 UTF-8 BOM CSV，前四列为第一版 timestamp、class_name、location、image_id，后续包含完整事件元数据。POST `/api/events/import` 接收原始 UTF-8 CSV body，Content-Type 必须是 text/csv，最大四 MiB、一万条记录。相同 event_id 或相同第一版记录重复导入会跳过。
+
+| 导入模式 | 行为 |
+| --- | --- |
+| 默认或 `?mode=strict` | 全批验证；有坏行时返回 400，整个批次不写入。标准错误响应另附 `inserted: 0`、`skipped: 0`、`rows` 和 `errors` |
+| `?mode=skip_invalid` | 提交有效行；坏行报告在 `errors`。全部是坏行时也返回 200，`inserted` 为 0，调用方须检查 `errors` |
+
+返回保留 `inserted`（新写入）、`skipped`（有效但重复）、`rows`（输入记录数，含坏记录），新增 `errors`（每项有从 1 开始的物理 `line` 和 `reason`）。标题行是第 1 行；空白行不计为记录。成功响应满足 `rows = inserted + skipped + errors.length`。例如：
+
+```json
+{"inserted":2,"skipped":0,"rows":3,"errors":[{"line":4,"reason":"Invalid isoformat string: 'bad'"}]}
+```
+
+非法模式、缺失表头、编码错误、超过上限或无法可靠识别记录边界的 CSV 引号错误，均拒绝整份文件并返回 400（超过请求字节限制返回 413）。离线命令 `migrate-legacy --mode skip_invalid` 使用相同计数和行号。
 
 CSV 内 location 必须是 JSON 数组，如 `"[1,2,3,4]"`，不执行 Python 表达式。无时区旧时间按 UTC+8 解释。CSV 不承载图片文件；完整备份恢复使用 manage.py，不应依靠 CSV 保证图片和设置齐全。
 
