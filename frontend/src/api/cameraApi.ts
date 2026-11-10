@@ -6,6 +6,7 @@ import type {
   HealthResponse,
   Settings,
   DetectionEvent,
+  ModelClassesResponse,
 } from "./types";
 import {
   mockHealth,
@@ -13,6 +14,7 @@ import {
   setMockInferenceStatus,
   setMockPreviewStatus,
   MOCK_PREVIEW_URL,
+  mockModelClasses,
 } from "../mock/mockData";
 import { getImageUrl } from "./itemApi";
 
@@ -91,6 +93,15 @@ export async function getSettings(): Promise<Settings> {
   const { data } = await http.get<Settings>("/api/settings").catch((error: unknown) => {
     throw new Error(getApiErrorMessage(error));
   });
+  return data;
+}
+
+export async function getModelClasses(): Promise<ModelClassesResponse> {
+  if (USE_MOCK) return mockModelClasses();
+  const { data } = await http.get<ModelClassesResponse>("/api/model/classes")
+    .catch((error: unknown) => {
+      throw new Error(getApiErrorMessage(error));
+    });
   return data;
 }
 

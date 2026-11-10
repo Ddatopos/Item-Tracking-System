@@ -39,7 +39,8 @@ if (-not $OutputDirectory) {
 $OutputDirectory = [System.IO.Path]::GetFullPath($OutputDirectory)
 $appDirectory = Join-Path $OutputDirectory 'ItemTrackingSystem'
 if (Test-Path -LiteralPath $appDirectory) {
-    throw "Output already exists: $appDirectory. Move or remove that generated package before rebuilding."
+    Write-Host "Removing previous desktop package: $appDirectory"
+    Remove-Item -LiteralPath $appDirectory -Recurse -Force
 }
 
 if (-not $SkipInstall) {

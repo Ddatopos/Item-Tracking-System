@@ -4,6 +4,7 @@ import type {
   SystemStatus,
   InferenceStatus,
   PreviewStatus,
+  ModelClassesResponse,
 } from "../api/types";
 
 export const MOCK_PREVIEW_URL = "mock://camera/preview";
@@ -58,6 +59,15 @@ export function mockHealth(): HealthResponse {
 const CLASS_NAMES = ["backpack", "phone", "keyboard", "cup", "chair", "laptop", "book", "bottle"];
 const ROOMS = ["客厅", "厨房", "卧室", "书房"];
 const MODEL_VERSIONS = ["yolov8n.pt", "yolov8s.pt"];
+
+export function mockModelClasses(): ModelClassesResponse {
+  return {
+    model_version: "mock-detector",
+    available: true,
+    simulated: true,
+    classes: [...CLASS_NAMES],
+  };
+}
 
 export function mockEvents(limit = 5): DetectionEvent[] {
   const events: DetectionEvent[] = [];

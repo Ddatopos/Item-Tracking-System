@@ -28,7 +28,7 @@ desktop\dist\ItemTrackingSystem\
   使用说明.md
 ```
 
-把整个 `ItemTrackingSystem` 文件夹复制到目标 Windows 电脑，双击其中的 `ItemTrackingSystem.exe`。这是一种免安装目录包，不是单文件 exe 或安装向导。为避免覆盖已有交付物，若目标输出目录已存在，脚本会停止；请先手动移动或删除该次生成的旧包。
+把整个 `ItemTrackingSystem` 文件夹复制到目标 Windows 电脑，双击其中的 `ItemTrackingSystem.exe`。这是一种免安装目录包，不是单文件 exe 或安装向导。每次构建时，脚本会自动删除输出位置下已有的 `ItemTrackingSystem` 文件夹并重新生成；如需保留旧包，请先将它移到其他位置。
 
 也可显式指定 Python 或输出位置：
 

@@ -76,6 +76,13 @@ export interface Settings {
   camera_id?: string;
 }
 
+export interface ModelClassesResponse {
+  model_version: string;
+  available: boolean;
+  simulated: boolean;
+  classes: string[];
+}
+
 export interface EventPage {
   events: DetectionEvent[];
   total: number;

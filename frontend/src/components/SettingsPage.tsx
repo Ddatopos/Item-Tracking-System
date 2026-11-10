@@ -1,13 +1,13 @@
 import React, { FormEvent, useEffect, useState } from "react";
 import {
   getHealth,
+  getModelClasses,
   getRuntimeStatus,
   getSettings,
   startInference,
   stopInference,
   updateSettings,
 } from "../api/cameraApi";
-import { getItemCategories } from "../api/itemApi";
 import DesktopOperations from "./DesktopOperations";
 import type { InferenceStatus, Settings } from "../api/types";
 
@@ -22,6 +22,10 @@ const INITIAL_SETTINGS: Settings = {
 function SettingsPage() {
   const [settings, setSettings] = useState<Settings>(INITIAL_SETTINGS);
   const [categories, setCategories] = useState<string[]>([]);
+  const [modelClasses, setModelClasses] = useState<string[]>([]);
+  const [modelVersion, setModelVersion] = useState("");
+  const [modelAvailable, setModelAvailable] = useState(false);
+  const [modelSimulated, setModelSimulated] = useState(false);
   const [newCategory, setNewCategory] = useState("");
   const [inferenceStatus, setInferenceStatus] = useState<InferenceStatus>("idle");
   const [loading, setLoading] = useState(true);
@@ -32,12 +36,16 @@ function SettingsPage() {
 
   useEffect(() => {
     let active = true;
-    Promise.all([getSettings(), getItemCategories(), getHealth(), getRuntimeStatus()])
-      .then(([currentSettings, availableCategories, health, runtimeStatus]) => {
+    Promise.all([getSettings(), getModelClasses(), getHealth(), getRuntimeStatus()])
+      .then(([currentSettings, modelInfo, health, runtimeStatus]) => {
         if (!active) return;
         setSettings(currentSettings);
+        setModelClasses(modelInfo.classes);
+        setModelVersion(modelInfo.model_version);
+        setModelAvailable(modelInfo.available);
+        setModelSimulated(modelInfo.simulated);
         setCategories(Array.from(new Set([
-          ...availableCategories,
+          ...modelInfo.classes,
           ...currentSettings.selected_classes,
         ])));
         const inferenceActive = ["running", "starting", "waiting_for_frame", "stopping"]
@@ -219,6 +227,11 @@ function SettingsPage() {
 
           <fieldset className="category-fieldset">
             <legend>检测类别</legend>
+            <p className="settings-hint">
+              {modelAvailable
+                ? `当前模型：${modelVersion || "未知"}${modelSimulated ? "（模拟）" : ""}`
+                : `当前模型不可用，无法读取支持类别${modelVersion ? `（${modelVersion}）` : ""}`}
+            </p>
             <label className="category-option">
               <input
                 type="checkbox"
@@ -239,7 +252,10 @@ function SettingsPage() {
                       checked={settings.selected_classes.includes(category)}
                       onChange={() => toggleCategory(category)}
                     />
-                    <span>{category}</span>
+                    <span>
+                      {category}
+                      {!modelClasses.includes(category) && "（非当前模型类别）"}
+                    </span>
                   </label>
                 ))}
               </div>
@@ -265,7 +281,9 @@ function SettingsPage() {
               </button>
             </div>
             {categories.length === 0 && (
-              <p className="settings-hint">尚无历史类别，可输入类别名后添加。</p>
+              <p className="settings-hint">
+                {modelAvailable ? "当前模型未提供支持类别。" : "模型不可用，暂时没有可选类别。"}
+              </p>
             )}
           </fieldset>
 
